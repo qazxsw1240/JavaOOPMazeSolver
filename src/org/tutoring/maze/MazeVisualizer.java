@@ -229,10 +229,8 @@ public class MazeVisualizer {
             int ySpan = this.tileSpan * this.maze.getRowDimension();
             int halfPaddingX = (bounds.width - xSpan) / 2;
             int halfPaddingY = (bounds.height - ySpan) / 2;
-            int xPadding = halfPaddingX;
-            int yPadding = halfPaddingY;
-            int currentXPadding = xPadding;
-            int currentYPadding = yPadding;
+            int currentXPadding = halfPaddingX;
+            int currentYPadding = halfPaddingY;
             graphics.setColor(Color.BLACK);
             graphics.setStroke(DEFAULT_STROKE);
             graphics.drawRect(currentXPadding - 1, currentYPadding - 1, xSpan + 2, ySpan + 2);
@@ -248,7 +246,7 @@ public class MazeVisualizer {
                     graphics.setColor(Color.BLUE);
                     graphics.fillRect(currentXPadding, currentYPadding, this.tileSpan, this.tileSpan);
                 } else if (c == '\n') {
-                    currentXPadding = xPadding;
+                    currentXPadding = halfPaddingX;
                     currentYPadding += this.tileSpan;
                     continue;
                 }
