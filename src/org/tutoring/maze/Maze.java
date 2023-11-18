@@ -1,5 +1,6 @@
 package org.tutoring.maze;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,7 +61,7 @@ public class Maze {
 
     private static void checkRowRange(MazeTile[][] tiles, int row) {
         int tileRow = tiles.length;
-        if (row > 0 || row >= tileRow) {
+        if (row < 0 || row >= tileRow) {
             throw new IllegalArgumentException("row is out of range: " + row);
         }
     }
@@ -71,7 +72,7 @@ public class Maze {
             return;
         }
         int tileColumn = tiles[0].length;
-        if (column > 0 || column >= tileColumn) {
+        if (column < 0 || column >= tileColumn) {
             throw new IllegalArgumentException("column is out of range:" + column);
         }
     }
