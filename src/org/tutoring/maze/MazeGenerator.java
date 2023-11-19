@@ -32,28 +32,10 @@ public class MazeGenerator {
         this.column = column;
     }
 
-    private static void initializeTiles(MazeTile[][] tiles) {
-        for (MazeTile[] rowTiles : tiles) {
-            Arrays.fill(rowTiles, MazeTile.WALL);
+    private static void initializeTiles(char[][] cells) {
+        for (char[] rowCells : cells) {
+            Arrays.fill(rowCells, Maze.WALL);
         }
-    }
-
-    /**
-     * Returns the row value of the mazes which this generator creates.
-     *
-     * @return The row value.
-     */
-    public int getRow() {
-        return this.row;
-    }
-
-    /**
-     * Returns the column value of the mazes which this generator creates.
-     *
-     * @return The column value.
-     */
-    public int getColumn() {
-        return this.column;
     }
 
     /**
@@ -61,7 +43,7 @@ public class MazeGenerator {
      *
      * @return A new maze created randomly.
      */
-    public Maze createMaze() {
+    public String createMaze() {
         return createMaze(System.currentTimeMillis());
     }
 
@@ -71,54 +53,64 @@ public class MazeGenerator {
      *
      * @return A new maze created randomly.
      */
-    public Maze createMaze(long seed) {
-        MazeTile[][] tiles = new MazeTile[this.row][this.column];
+    public String createMaze(long seed) {
+        char[][] cells = new char[this.row][this.column];
         Random random = new Random(seed);
-        initializeTiles(tiles);
-        fillTiles(tiles, random, 0, 0);
-        return new Maze(tiles, 0, 0);
+        initializeTiles(cells);
+        fillCells(cells, random, Coordinate.UNIT_COORDINATE);
+        return createMaze(cells);
     }
 
-    private void fillTiles(MazeTile[][] tiles, Random random, int row, int column) {
-        tiles[row][column] = MazeTile.ROAD;
-        List<Coordinate> coordinates = getNeighbors(row, column);
+    private String createMaze(char[][] chars) {
+        String[] lines = new String[chars.length];
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = new String(chars[i]);
+        }
+        return String.join("\n", lines);
+    }
+
+    private void fillCells(char[][] cells, Random random, Coordinate coordinate) {
+        cells[coordinate.getRow()][coordinate.getColumn()] = Maze.ROAD;
+        List<Coordinate> coordinates = getNeighbors(coordinate);
         Collections.shuffle(coordinates, random);
-        for (Coordinate coordinate : coordinates) {
-            int coordRow = coordinate.getRow();
-            int coordColumn = coordinate.getColumn();
-            if (tiles[coordRow][coordColumn] == MazeTile.ROAD) {
+        for (Coordinate coord : coordinates) {
+            int coordRow = coord.getRow();
+            int coordColumn = coord.getColumn();
+            if (cells[coordRow][coordColumn] == Maze.ROAD) {
                 continue;
             }
-            connectTiles(tiles, row, column, coordRow, coordColumn);
-            fillTiles(tiles, random, coordRow, coordColumn);
+            connectCells(cells, coordinate, coord);
+            fillCells(cells, random, coord);
         }
     }
 
-    private void connectTiles(MazeTile[][] tiles, int c1row, int c1column, int c2row, int c2column) {
-        if (c1row == c2row) {
-            int lower = Math.min(c1column, c2column);
-            int upper = Math.max(c1column, c2column);
+    private void connectCells(char[][] cells, Coordinate c1, Coordinate c2) {
+        if (c1.getRow() == c2.getRow()) {
+            int row = c1.getRow();
+            int lower = Math.min(c1.getColumn(), c2.getColumn());
+            int upper = Math.max(c1.getColumn(), c2.getColumn());
             for (int i = lower; i <= upper; i++) {
-                tiles[c1row][i] = MazeTile.ROAD;
+                cells[row][i] = Maze.ROAD;
             }
             return;
         }
-        if (c1column == c2column) {
-            int lower = Math.min(c1row, c2row);
-            int upper = Math.max(c1row, c2row);
+        if (c1.getColumn() == c2.getColumn()) {
+            int column = c1.getColumn();
+            int lower = Math.min(c1.getRow(), c2.getRow());
+            int upper = Math.max(c1.getRow(), c2.getRow());
             for (int i = lower; i <= upper; i++) {
-                tiles[i][c1column] = MazeTile.ROAD;
+                cells[i][column] = Maze.ROAD;
             }
             return;
         }
-        throw new IllegalStateException(String.format("Cannot connect (%d, %d) to (%d, %d)", c1row, c1column, c2row, c2column));
+        throw new IllegalStateException(String.format("Cannot connect %s to %s", c1, c2));
     }
 
-    private List<Coordinate> getNeighbors(int row, int column) {
+    private List<Coordinate> getNeighbors(Coordinate coordinate) {
         List<Coordinate> coordinates = new ArrayList<>(MazeGeneratorUtils.NEIGHBOR_OFFSET_SIZE);
         for (int i = 0; i < MazeGeneratorUtils.NEIGHBOR_OFFSET_SIZE; i++) {
-            int newRow = row + MazeGeneratorUtils.NEIGHBOR_ROW_OFFSETS[i];
-            int newColumn = column + MazeGeneratorUtils.NEIGHBOR_COLUMN_OFFSETS[i];
+            int newRow = coordinate.getRow() + MazeGeneratorUtils.NEIGHBOR_ROW_OFFSETS[i];
+            int newColumn = coordinate.getColumn() + MazeGeneratorUtils.NEIGHBOR_COLUMN_OFFSETS[i];
             if (isRowRange(newRow) && isColumnRange(newColumn)) {
                 coordinates.add(new Coordinate(newRow, newColumn));
             }
