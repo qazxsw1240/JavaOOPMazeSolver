@@ -8,7 +8,7 @@ package org.tutoring.maze;
  */
 public class Coordinate {
     /**
-     * Get a unit coordinate instance whose row and column value is (0, 0).
+     * A unit coordinate instance the row and column values of which are (0, 0).
      */
     public static final Coordinate UNIT_COORDINATE = new Coordinate(0, 0);
 
