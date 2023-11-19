@@ -7,7 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * This GUI application class is for visualizing Maze.
@@ -42,15 +41,17 @@ public class MazeVisualizer {
     private static class SwingFrame extends JFrame {
         private static final String TITLE = "Maze Visualizer";
 
-        private final ListIterator<Maze> iterator;
+        private final List<Maze> mazeList;
         private final StepManagerPanel stepManagerPanel;
         private final MazePaintPanel mazePaintPanel;
 
+        private volatile int index;
+
         public SwingFrame(List<Maze> mazeList) {
             super(TITLE);
-            this.iterator = mazeList.listIterator();
+            this.mazeList = mazeList;
             this.stepManagerPanel = new StepManagerPanel();
-            this.mazePaintPanel = this.iterator.hasNext() ? new MazePaintPanel(this.iterator.next()) : null;
+            this.mazePaintPanel = this.mazeList.isEmpty() ? null : new MazePaintPanel(this.mazeList.get(0));
             initialize();
         }
 
@@ -58,12 +59,12 @@ public class MazeVisualizer {
             setDefaultCloseOperation(DISPOSE_ON_CLOSE);
             setLayout(new BorderLayout());
             setResizable(false);
+            this.stepManagerPanel.setPreviousButtonClickedListener(this::onPreviousButtonClicked);
+            this.stepManagerPanel.setNextButtonClickedListener(this::onNextButtonClicked);
             add(this.stepManagerPanel, BorderLayout.NORTH);
             add(this.mazePaintPanel, BorderLayout.CENTER);
             pack();
             setLocationRelativeTo(null);
-            this.stepManagerPanel.setPreviousButtonClickedListener(this::onPreviousButtonClicked);
-            this.stepManagerPanel.setNextButtonClickedListener(this::onNextButtonClicked);
             setFocusable(true);
             addKeyListener(new KeyAdapter() {
                 @Override
@@ -74,17 +75,21 @@ public class MazeVisualizer {
         }
 
         private void onPreviousButtonClicked() {
-            if (!this.iterator.hasPrevious()) {
+            if (this.index == 0) {
                 return;
             }
-            this.mazePaintPanel.render(this.iterator.previous());
+            synchronized (this) {
+                this.mazePaintPanel.render(this.mazeList.get(--this.index));
+            }
         }
 
         private void onNextButtonClicked() {
-            if (!this.iterator.hasNext()) {
+            if (this.index >= this.mazeList.size() - 1) {
                 return;
             }
-            this.mazePaintPanel.render(this.iterator.next());
+            synchronized (this) {
+                this.mazePaintPanel.render(this.mazeList.get(++this.index));
+            }
         }
 
         private void onKeyPressed(KeyEvent event) {
@@ -157,7 +162,7 @@ public class MazeVisualizer {
         private static final int MIN_PANEL_SIZE = 200;
         private static final int PANEL_SIZE_BOUND = 800;
         private static final int TILE_SPAN = 40;
-        private static final int PADDING = 100;
+        private static final int PADDING = 50;
 
         private final int tileSpan;
         private volatile MazePainter mazePainter;
@@ -234,23 +239,15 @@ public class MazeVisualizer {
             graphics.setColor(Color.BLACK);
             graphics.setStroke(DEFAULT_STROKE);
             graphics.drawRect(currentXPadding - 1, currentYPadding - 1, xSpan + 2, ySpan + 2);
-            String s = this.maze.toString();
-            for (char c : s.toCharArray()) {
-                if (c == MazeTile.ROAD.toChar()) {
-                    graphics.setColor(Color.WHITE);
+            Color[][] colors = this.maze.getColorArray();
+            for (Color[] line : colors) {
+                for (Color c : line) {
+                    graphics.setColor(c);
                     graphics.fillRect(currentXPadding, currentYPadding, this.tileSpan, this.tileSpan);
-                } else if (c == MazeTile.WALL.toChar()) {
-                    graphics.setColor(Color.BLACK);
-                    graphics.fillRect(currentXPadding, currentYPadding, this.tileSpan, this.tileSpan);
-                } else if (c == 'O') {
-                    graphics.setColor(Color.BLUE);
-                    graphics.fillRect(currentXPadding, currentYPadding, this.tileSpan, this.tileSpan);
-                } else if (c == '\n') {
-                    currentXPadding = halfPaddingX;
-                    currentYPadding += this.tileSpan;
-                    continue;
+                    currentXPadding += this.tileSpan;
                 }
-                currentXPadding += this.tileSpan;
+                currentXPadding = halfPaddingX;
+                currentYPadding += this.tileSpan;
             }
         }
     }
